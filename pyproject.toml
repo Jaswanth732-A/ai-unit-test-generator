@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-unit-test-generator"
+version = "0.1.0"
+description = "An OpenAI-powered Python unit test generator"
+readme = "README.md"
+dependencies = [
+    "openai",
+    "python-dotenv",
+    "pydantic",
+    "gradio",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--import-mode=importlib",
+    "--cov=unit_test_generator",
+    "--cov-report=term-missing",
+]
+
+[tool.basedpyright]
+include = ["src", "tests", "app.py"]
+extraPaths = ["src"]
+venvPath = "."
+venv = ".venv"
