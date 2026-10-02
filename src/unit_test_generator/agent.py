@@ -61,9 +61,6 @@ TOOLS = [
                 "module_name": {
                     "type": "string",
                 },
-                "source_code": {
-                    "type": "string",
-                },
                 "generated_tests": {
                     "type": "string",
                 },
@@ -71,7 +68,6 @@ TOOLS = [
             "required": [
                 "language",
                 "module_name",
-                "source_code",
                 "generated_tests",
             ],
             "additionalProperties": False,
@@ -80,27 +76,24 @@ TOOLS = [
     },
 ]
 
-def execute_tool(tool_name: str,arguments: dict) -> str:
-    """Execute the function requested by OpenAI."""
-    print(f"\nAgent selected tool: {tool_name}")
+def execute_tool(tool_name: str,arguments: dict,original_source_code: str) -> str:
+    """Execute the function requested by the model."""
     if tool_name == "select_test_framework":
-        result = select_test_framework(
-            language=arguments["language"],
-        )
-        print(f"Selected framework: {result}")
-        return result
+        return select_test_framework(language=arguments["language"])
+
     if tool_name == "save_code_files":
         result = save_code_files(
             language=arguments["language"],
             module_name=arguments["module_name"],
-            source_code=arguments["source_code"],
+            source_code=original_source_code,
             generated_tests=arguments["generated_tests"],
         )
-        print("Files saved successfully")
+
         return json.dumps(result)
+
     raise ValueError(f"Unknown tool: {tool_name}")
 
-def run_tool_loop(response):
+def run_tool_loop(response,original_source_code: str):
     """Continue until OpenAI stops requesting tools."""
     current_response = response
     while True:
@@ -111,8 +104,9 @@ def run_tool_loop(response):
             arguments = json.loads(item.arguments)
             result = execute_tool(
                 tool_name=item.name,
-                arguments=arguments
-                )
+                arguments=arguments,
+                original_source_code=original_source_code,
+            )
             tool_outputs.append({
                     "type": "function_call_output",
                     "call_id": item.call_id,
@@ -145,7 +139,10 @@ def generate_unit_tests(language: str,module_name: str,source_code: str) -> str:
         tools=TOOLS,
     )
 
-    final_response = run_tool_loop(first_response)
+    final_response = run_tool_loop(
+    first_response,
+    original_source_code=source_code,
+    )
 
     return final_response.output_text
 
